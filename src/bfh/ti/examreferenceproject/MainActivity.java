@@ -28,7 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity implements OnInitListener {
-
+	
 	private ADC adc;
 	private TextView viewADCValue;
 
@@ -37,15 +37,17 @@ public class MainActivity extends Activity implements OnInitListener {
 	private TextToSpeech tts;
 	private String tts_text = "Aktueller Füllstand: ";
 
+	private boolean led1shadow = true;
+	
 	private SysfsFileGPIO led1;
 	// private SysfsFileGPIO led2;
 	// private SysfsFileGPIO led3;
-	private SysfsFileGPIO led4;
+	// private SysfsFileGPIO led4;
 
 	private SysfsFileGPIO button1;
 	// private SysfsFileGPIO button2;
 	// private SysfsFileGPIO button3;
-	// private SysfsFileGPIO button4;
+	private SysfsFileGPIO button4;
 
 	private int adcValue;
 	private boolean speakEnabled = false;
@@ -72,23 +74,23 @@ public class MainActivity extends Activity implements OnInitListener {
 		led1 = new SysfsFileGPIO(SysfsFileGPIO.LED_L1);
 		// led2 = new SysfsFileGPIO(SysfsFileGPIO.LED_L2);
 		// led3 = new SysfsFileGPIO(SysfsFileGPIO.LED_L3);
-		led4 = new SysfsFileGPIO(SysfsFileGPIO.LED_L4);
+		// led4 = new SysfsFileGPIO(SysfsFileGPIO.LED_L4);
 
 		led1.set_direction_out();
 		// led2.set_direction_out();
 		// led3.set_direction_out();
-		led4.set_direction_out();
+		// led4.set_direction_out();
 
 		// set up buttons
 		button1 = new SysfsFileGPIO(SysfsFileGPIO.BUTTON_T1);
 		// button2 = new SysfsFileGPIO(SysfsFileGPIO.BUTTON_T2);
 		// button3 = new SysfsFileGPIO(SysfsFileGPIO.BUTTON_T3);
-		// button4 = new SysfsFileGPIO(SysfsFileGPIO.BUTTON_T4);
+		button4 = new SysfsFileGPIO(SysfsFileGPIO.BUTTON_T4);
 
 		button1.set_direction_in();
 		// button2.set_direction_in();
 		// button3.set_direction_in();
-		// button4.set_direction_in();
+		button4.set_direction_in();
 
 		// set up ADC handling timer, delay 0ms and repeat in 50ms (20Hz)
 		Timer adcTimer = new Timer();
@@ -146,12 +148,13 @@ public class MainActivity extends Activity implements OnInitListener {
 	// button handle timer
 	class ButtonTimerTask extends TimerTask {
 		private int oldButton1Value = 1; // for edge detection
+		private int oldButton4Value = 1; // for edge detection
 
 		public void run() {
 			// Read button values and react accordingly
 			// Warning: BUTTONS AND LEDS ARE ACTIVE-LOW
-			led1.write_value(button1.read_value());
 
+			// Button1
 			if (button1.read_value() == 0 && oldButton1Value == 1
 					&& speakEnabled) {
 				// Tell adc Value
@@ -167,6 +170,15 @@ public class MainActivity extends Activity implements OnInitListener {
 				});
 			}
 			oldButton1Value = button1.read_value();
+			
+			// Button4
+			if (button4.read_value() == 0 && oldButton4Value == 1) {
+				// Reset LED1
+				led1.write_value(1);
+				// Close app
+				System.exit(1);
+			}
+			oldButton1Value = button4.read_value();
 		}
 	}
 
@@ -174,7 +186,10 @@ public class MainActivity extends Activity implements OnInitListener {
 	class LEDTimerTask extends TimerTask {
 		@Override
 		public void run() {
-			led4.write_value(led4.read_value());
+
+			// Toggle led (cast boolean to int)
+			led1.write_value((led1shadow) ? 1 : 0);
+			led1shadow = !led1shadow;
 		}
 	}
 

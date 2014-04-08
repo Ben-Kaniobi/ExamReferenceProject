@@ -38,6 +38,7 @@ public class MainActivity extends Activity implements OnInitListener {
 	private String tts_text = "Aktueller Füllstand: ";
 
 	private boolean led1shadow = true;
+	private int led_pwm_counter = 1;
 	
 	private SysfsFileGPIO led1;
 	// private SysfsFileGPIO led2;
@@ -186,15 +187,45 @@ public class MainActivity extends Activity implements OnInitListener {
 	class LEDTimerTask extends TimerTask {
 		@Override
 		public void run() {
+			
+			// Increment counter
+			led_pwm_counter++;
+			// "Overflow"
+			if(led_pwm_counter > 10) {
+				led_pwm_counter = 1;
+			}
 
-			// Toggle led (cast boolean to int)
-			led1.write_value((led1shadow) ? 1 : 0);
-			led1shadow = !led1shadow;
+			int count_max;
+			
+			if(adcValue > 3000) {
+				// Allways on
+				count_max = 10;
+			}
+			else if(adcValue > 1000) {
+				// On for 500ms
+				count_max = 5;
+			}
+			else {
+				// On for 100ms
+				count_max = 1;
+			}
+			
+			if(led_pwm_counter <= count_max) {
+				// Set LED1
+				led1.write_value(0);
+			}
+			else {
+				// Reset LED1
+				led1.write_value(1);
+			}
 		}
 	}
 
 	// clean up
 	public void onDestroy() {
+		// Reset LED1
+		led1.write_value(1);
+		
 		// Don't forget to shutdown!
 		if (tts != null) {
 			tts.stop();

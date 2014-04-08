@@ -231,6 +231,8 @@ public class MainActivity extends Activity implements OnInitListener {
 			tts.stop();
 			tts.shutdown();
 		}
+		// Close app
+		System.exit(1);
 		super.onDestroy();
 	}
 }

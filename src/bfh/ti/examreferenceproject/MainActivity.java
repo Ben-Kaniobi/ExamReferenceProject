@@ -1,14 +1,14 @@
 /*
  ***************************************************************************
  * \brief   Embedded-Android (BTE5484)
- *	    	Exam 08.04.2014
  * \file    MainActivity.java
  * \version 1.0
- * \date    01.04.2014
- * \author  Cyril Stoller
+ * \date    08.04.2014
+ * \author  kasen1
  *
  * \remark  Last Modifications:
  * \remark  V1.0, stolc2, 01.04.2014
+ * 			V1.1, kasen1, 08.04.2014 Exam
  ***************************************************************************
  */
 package bfh.ti.examreferenceproject;
@@ -24,7 +24,6 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.view.Menu;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,17 +31,16 @@ public class MainActivity extends Activity implements OnInitListener {
 
 	private ADC adc;
 	private TextView viewADCValue;
-	private Button myButton;
 
 	private Context context;
 
 	private TextToSpeech tts;
-	private String text = "You have selected Microsoft Sam as the computer's default voice.";
+	private String tts_text = "Aktueller Füllstand: ";
 
 	private SysfsFileGPIO led1;
 	// private SysfsFileGPIO led2;
 	// private SysfsFileGPIO led3;
-	// private SysfsFileGPIO led4;
+	private SysfsFileGPIO led4;
 
 	private SysfsFileGPIO button1;
 	// private SysfsFileGPIO button2;
@@ -63,14 +61,6 @@ public class MainActivity extends Activity implements OnInitListener {
 
 		// set up UI elements
 		viewADCValue = (TextView) findViewById(R.id.myTextView);
-		myButton = (Button) findViewById(R.id.myButton);
-		myButton.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Toast.makeText(context, (CharSequence) "button clicked",
-						Toast.LENGTH_SHORT).show();
-			}
-		});
 
 		// set up text2speech
 		tts = new TextToSpeech(this, this);
@@ -82,12 +72,12 @@ public class MainActivity extends Activity implements OnInitListener {
 		led1 = new SysfsFileGPIO(SysfsFileGPIO.LED_L1);
 		// led2 = new SysfsFileGPIO(SysfsFileGPIO.LED_L2);
 		// led3 = new SysfsFileGPIO(SysfsFileGPIO.LED_L3);
-		// led4 = new SysfsFileGPIO(SysfsFileGPIO.LED_L4);
+		led4 = new SysfsFileGPIO(SysfsFileGPIO.LED_L4);
 
 		led1.set_direction_out();
 		// led2.set_direction_out();
 		// led3.set_direction_out();
-		// led4.set_direction_out();
+		led4.set_direction_out();
 
 		// set up buttons
 		button1 = new SysfsFileGPIO(SysfsFileGPIO.BUTTON_T1);
@@ -110,15 +100,10 @@ public class MainActivity extends Activity implements OnInitListener {
 		ButtonTimerTask buttonTimerTask = new ButtonTimerTask();
 		buttonTimer.schedule(buttonTimerTask, 0, 50);
 
-		// set up a one-time timer; delay 3s
-		Timer oneTimeTimer = new Timer();
-		OneTimeTimerTask oneTimeTimerTask = new OneTimeTimerTask();
-		oneTimeTimer.schedule(oneTimeTimerTask, 3000);
-
-		// Recurring Timers are stopped with:
-		// if (buttonTimer != null) buttonTimer.cancel();
-		// but after this statement, the timer won't ever start again!
-		// So it has to be re-scheduled with buttonTimer = new Timer() .. etc.
+		// set up LED handling timer, delay 0ms and repeat in 100ms
+		Timer ledTimer = new Timer();
+		LEDTimerTask ledTimerTask = new LEDTimerTask();
+		ledTimer.schedule(ledTimerTask, 0, 100);
 	}
 
 	@Override
@@ -132,7 +117,8 @@ public class MainActivity extends Activity implements OnInitListener {
 	@Override
 	public void onInit(int status) {
 		if (status == TextToSpeech.SUCCESS) {
-			int result = tts.setLanguage(Locale.US);
+			//tts.setSpeechRate(1.5F);
+			int result = tts.setLanguage(Locale.GERMAN);
 			if (result != TextToSpeech.LANG_MISSING_DATA
 					&& result != TextToSpeech.LANG_NOT_SUPPORTED) {
 				speakEnabled = true;
@@ -150,10 +136,11 @@ public class MainActivity extends Activity implements OnInitListener {
 			runOnUiThread(new Runnable() {
 				public void run() {
 					// update textView in a UI-Thread
-					viewADCValue.setText("ADC-Value: " + adcValue);
+					viewADCValue.setText("Füllstand: " + adcValue + "mm");
 				}
 			});
 		}
+		// led4 = new SysfsFileGPIO(SysfsFileGPIO.LED_L4);
 	}
 
 	// button handle timer
@@ -167,8 +154,8 @@ public class MainActivity extends Activity implements OnInitListener {
 
 			if (button1.read_value() == 0 && oldButton1Value == 1
 					&& speakEnabled) {
-				// speak something
-				tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+				// Tell adc Value
+				tts.speak(tts_text + adcValue + " Millimeter", TextToSpeech.QUEUE_FLUSH, null);
 
 				// place Toast. --> WARNING: inside a timer thread,
 				// the Toast has to be launched in a UI-Thread!!
@@ -183,15 +170,11 @@ public class MainActivity extends Activity implements OnInitListener {
 		}
 	}
 
-	// one-time recurring timer
-	class OneTimeTimerTask extends TimerTask {
+	// LED handle timer
+	class LEDTimerTask extends TimerTask {
+		@Override
 		public void run() {
-			runOnUiThread(new Runnable() {
-				public void run() {
-					Toast.makeText(context, (CharSequence) "one-time timer",
-							Toast.LENGTH_SHORT).show();
-				}
-			});
+			led4.write_value(led4.read_value());
 		}
 	}
 

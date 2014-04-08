@@ -18,13 +18,4 @@
         android:textSize="30sp"
         android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/myButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/myTextView"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="59dp"
-        android:text="A Veeery special Button!" />
-
 </RelativeLayout>

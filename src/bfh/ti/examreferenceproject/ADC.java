@@ -1,15 +1,15 @@
 /*
  ***************************************************************************
  * \brief   Embedded-Android (BTE5484)
- *	    	Exam 22.04.2014
  *			Accessing the ADC (connected potentiometer)
  * \file    ADC.java
- * \version 1.0
- * \date    01.04.2014
- * \author  Cyril Stoller
+ * \version 1.1
+ * \date    08.04.2014
+ * \author  kasen1
  *
  * \remark  Last Modifications:
  * \remark  V1.0, stolc2, 01.04.2014
+ * 			V1.1, kasen1, 08.04.2014 Exam
  ***************************************************************************
  */
 package bfh.ti.examreferenceproject;
